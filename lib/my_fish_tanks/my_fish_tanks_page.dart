@@ -7,6 +7,9 @@ import 'cubit/my_fish_tanks_cubit.dart';
 class MyFishTanksPage extends StatelessWidget {
   const MyFishTanksPage({super.key});
 
+  static const String path = '/my-fish-tanks';
+  static const String name = 'my-fish-tanks';
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -32,7 +35,8 @@ class MyFishTanksContent extends StatefulWidget {
 }
 
 class _MyFishTanksContentState extends State<MyFishTanksContent> {
-  final fishTankIdCont = TextEditingController(text: 'c0a35a64-3181-42d4-b8c5-a7883f0cfcb6');
+  final fishTankIdCont =
+      TextEditingController(text: 'c0a35a64-3181-42d4-b8c5-a7883f0cfcb6');
   final titleCont = TextEditingController(text: 'Akwarium');
 
   @override
@@ -43,20 +47,18 @@ class _MyFishTanksContentState extends State<MyFishTanksContent> {
         children: [
           TextFormField(
             controller: fishTankIdCont,
-            decoration: InputDecoration(
-              hintText: 'Id'
-            ),
+            decoration: InputDecoration(hintText: 'Id'),
           ),
           TextFormField(
             controller: titleCont,
-            decoration: InputDecoration(
-                hintText: 'Title'
-            ),
+            decoration: InputDecoration(hintText: 'Title'),
           ),
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: () {
-              context.read<MyFishTanksCubit>().addFishTank(fishTankIdCont.text, titleCont.text);
+              context
+                  .read<MyFishTanksCubit>()
+                  .addFishTank(fishTankIdCont.text, titleCont.text);
             },
             child: Text('Dodaj'),
           )

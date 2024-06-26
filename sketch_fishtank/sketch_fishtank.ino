@@ -9,6 +9,7 @@
 
 // Define Firebase objects
 FirebaseData fbdo;
+FirebaseData stream;
 FirebaseAuth auth;
 FirebaseConfig config;
 String smartFishTankPath = String("fishTanks/") + String(DEVICE_UUID);
@@ -58,6 +59,7 @@ public:
   void setup() {
     pinMode(SOCKET_PIN, OUTPUT);
     digitalWrite(SOCKET_PIN, HIGH);
+    stateOn = false;
   }
 
   void setTimePeriods(int hFrom, int mFrom, int hTo, int mTo) {
@@ -77,10 +79,20 @@ public:
   }
 
   void updateState(struct tm *time) {
-    if (hourFrom == -1 | minFrom == -1 | hourTo == -1 | minTo == -1) {
+    if (!isHasSetSuccess()) {
       Serial.print("Socket ");
       Serial.print(SOCKET_NAME);
-      Serial.println(" time periods non set");
+      Serial.println(" time periods:");
+      Serial.print(hourFrom);
+      Serial.print("/ ");
+      Serial.print(minFrom);
+      Serial.print("/ ");
+      Serial.print(hourTo);
+      Serial.print("/ ");
+      Serial.print(minTo);
+      Serial.print("/ ");
+      Serial.println();
+
       return;
     }
 
@@ -94,9 +106,19 @@ public:
 
     if (timeInSec >= fromInSec & timeInSec <= toInSec) {
       digitalWrite(SOCKET_PIN, LOW);
+      stateOn = true;
     } else {
       digitalWrite(SOCKET_PIN, HIGH);
+      stateOn = false;
     }
+  }
+
+  bool isHasSetSuccess() {
+    return (isHourValid(hourFrom) & isHourValid(hourTo) & isMinValid(minFrom) & isMinValid(minTo));
+  }
+
+  bool isStateOn() {
+    return stateOn;
   }
 } sockets[4] = {
   { 12, "socket1" },
@@ -115,7 +137,7 @@ void setup() {
 }
 
 void loop() {
-  timeLoop();
+  timeLoop(false);
   firebaseLoop();
 }
 
@@ -161,37 +183,39 @@ void streamTimeoutCallback(bool timeout) {
 }
 
 void streamCallback(FirebaseStream data) {
-  Serial.printf("sream path, %s\nevent path, %s\ndata type, %s\nevent type, %s\n\n",
+  Serial.printf("stream path, %s\nevent path, %s\ndata type, %s\nevent type, %s\n\n",
                 data.streamPath().c_str(),
                 data.dataPath().c_str(),
                 data.dataType().c_str(),
                 data.eventType().c_str());
-  printResult(data);  // see addons/RTDBHelper.h
-  Serial.println();
+  printResult(data);
 
-  FirebaseJson *json = data.to<FirebaseJson *>();
+  fetchFishtankSettings();
+  // Serial.println();
 
-  if (data.eventType().equals("/settings")) {
-    FirebaseJsonData settingsRes;
-    json->get(settingsRes, "settings");
+  // FirebaseJson *json = data.to<FirebaseJson *>();
 
-    if (settingsRes.success) {
-      FirebaseJson settingsJson;
-      settingsRes.getJSON(settingsJson);
-      updateSocketsSettings(settingsJson);
-    }
-  }
+  // if (data.eventType().equals("/settings")) {
+  //   FirebaseJsonData settingsRes;
+  //   json->get(settingsRes, "settings");
 
-  if (data.eventType().equals("/state")) {
-    FirebaseJsonData stateRes;
-    json->get(stateRes, "state");
+  //   if (settingsRes.success) {
+  //     FirebaseJson settingsJson;
+  //     settingsRes.getJSON(settingsJson);
+  //     updateSocketsSettings(settingsJson);
+  //   }
+  // }
 
-    if (stateRes.success) {
-      FirebaseJson stateJson;
-      stateRes.getJSON(stateJson);
-      updateSocketsState(stateJson);
-    }
-  }
+  // if (data.eventType().equals("/state")) {
+  //   FirebaseJsonData stateRes;
+  //   json->get(stateRes, "state");
+
+  //   if (stateRes.success) {
+  //     FirebaseJson stateJson;
+  //     stateRes.getJSON(stateJson);
+  //     updateSocketsState(stateJson);
+  //   }
+  // }
 }
 
 void initFirebase() {
@@ -204,6 +228,10 @@ void initFirebase() {
   fbdo.setBSSLBufferSize(2048, 1024);
   fbdo.setResponseSize(2048);
   fbdo.keepAlive(5, 5, 1);
+
+  stream.setBSSLBufferSize(2048, 1024);
+  stream.setResponseSize(2048);
+  stream.keepAlive(5, 5, 1);
 
   auth.user.email = FB_USER_EMAIL;
   auth.user.password = FB_USER_PASSWORD;
@@ -221,10 +249,10 @@ void initFirebase() {
   Serial.print("User UID: ");
   Serial.println(auth.token.uid.c_str());
 
-  Firebase.RTDB.setStreamCallback(&fbdo, streamCallback, streamTimeoutCallback);
+  Firebase.RTDB.setStreamCallback(&stream, streamCallback, streamTimeoutCallback);
 
   // set stream callbacks
-  if (!Firebase.RTDB.beginStream(&fbdo, smartFishTankPath)) {
+  if (!Firebase.RTDB.beginStream(&stream, smartFishTankPath + String("/settings"))) {
     Serial.printf("stream begin error, %s\n\n", fbdo.errorReason().c_str());
   } else {
     Serial.println("stream begin");
@@ -236,29 +264,36 @@ void firebaseLoop() {
     return;
   }
 
-  chekcAndFetchInitialSettings();
+  checkAndFetchInialSettings();
 }
 
-void chekcAndFetchInitialSettings() {
+
+void checkAndFetchInialSettings() {
   if (initSettinsHasFetched) {
     return;
   }
+
   unsigned long currentMillis = millis();
+
   if (initSettinsPrevMilis == 0 || (currentMillis - initSettinsPrevMilis) >= 10000) {
     initSettinsPrevMilis = currentMillis;
-
-    FirebaseJson settingsJson;
-    Firebase.RTDB.getJSON(&fbdo, smartFishTankPath + String("/settings"), &settingsJson);
     Serial.println("Fetch initial settings");
-    updateSocketsSettings(settingsJson);
+    fetchFishtankSettings();
+    timeLoop(true);
     initSettinsHasFetched = true;
   }
+}
+
+void fetchFishtankSettings() {
+  FirebaseJson settingsJson;
+  Firebase.RTDB.getJSON(&fbdo, smartFishTankPath + String("/settings"), &settingsJson);
+  updateSocketsSettings(settingsJson);
 }
 
 void updateSocketsSettings(FirebaseJson settingsJson) {
   Serial.println("updateSocketsSettings called");
 
-  for (Socket socket : sockets) {
+  for (auto &socket : sockets) {
     FirebaseJsonData socketRes;
     settingsJson.get(socketRes, socket.SOCKET_NAME);
     if (socketRes.type != "object") {
@@ -288,8 +323,15 @@ void updateSocketsSettings(FirebaseJson settingsJson) {
   }
 }
 
-void updateSocketsState(FirebaseJson stateJson) {
-  Serial.println("updateSocketsState called");
+void updateSocketsStateInDB() {
+  Serial.println("updateSocketsStateInDB called");
+  FirebaseJson json;
+
+  for (auto &socket : sockets) {
+    json.set(socket.SOCKET_NAME + String("/isOn"), socket.isStateOn());
+  }
+
+  Serial.printf("Set json... %s\n", Firebase.RTDB.set(&fbdo, smartFishTankPath + String("/state"), &json) ? "ok" : fbdo.errorReason().c_str());
 }
 //------ end firebase
 
@@ -312,9 +354,9 @@ void printCurrentTime() {
 
 unsigned long previousTimeMillis = 0;
 
-void timeLoop() {
+void timeLoop(bool force) {
   unsigned long currentMillis = millis();
-  if (previousTimeMillis == 0 || currentMillis - previousTimeMillis >= 10000) {
+  if (previousTimeMillis == 0 || currentMillis - previousTimeMillis >= 30000 || force) {
     previousTimeMillis = currentMillis;
     struct tm timeinfo;
     Serial.println("timeLoop");
@@ -323,15 +365,25 @@ void timeLoop() {
     }
     printCurrentTime();
 
-    for (Socket socket : sockets) {
+    bool needUpdateInDB = false;
+    for (auto &socket : sockets) {
+      bool prevState = socket.isStateOn();
       socket.updateState(&timeinfo);
+
+      if (!needUpdateInDB && prevState != socket.isStateOn()) {
+        needUpdateInDB = true;
+      }
+    }
+
+    if (needUpdateInDB) {
+      updateSocketsStateInDB();
     }
   }
 }
 //------ end current time setup
 
 void setupPins() {
-  for (Socket socket : sockets) {
+  for (auto &socket : sockets) {
     socket.setup();
   }
 }

@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "email": "Email",
+  "password": "Hasło",
+  "signIn": "Załoguj",
+  "socketTypeSelect": "{type, select, light{Oświetlenie} uv{Lampa UV} co2{CO₂} airPump{Napowietrzacz} other{{type}}}",
+  "save": "Zapisz",
+  "disable": "Wyłącz",
+  "hour": "g",
+  "minutes": "min.",
+  "timeFromTo": "Od {timeFrom} do {timeTo}"
+}

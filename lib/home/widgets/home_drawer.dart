@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:smart_fishtank/auth/cubit/auth_cubit.dart';
-import 'package:smart_fishtank/core/app_router.dart';
+import 'package:smart_fishtank/feature/auth/cubit/auth_cubit.dart';
+import 'package:smart_fishtank/my_fish_tanks/my_fish_tanks_page.dart';
 
 class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
@@ -15,7 +15,7 @@ class HomeDrawer extends StatelessWidget {
           children: [
             TextButton(
               onPressed: () {
-                context.pushNamed(AppRoute.myFishTanks.name);
+                context.pushNamed(MyFishTanksPage.name);
               },
               child: Text('Moje akwaria'),
             ),

@@ -1,20 +1,19 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:smart_fishtank/auth/cubit/auth_cubit.dart';
 import 'package:smart_fishtank/core/repositories/smart_fish_tank/models/smart_fish_tank.dart';
 import 'package:smart_fishtank/core/repositories/smart_fish_tank/models/smart_fish_tank_settings.dart';
 import 'package:smart_fishtank/core/repositories/smart_fish_tank/smart_fish_tank_repository.dart';
-import 'package:smart_fishtank/core/repositories/user/models/profile.dart';
 import 'package:smart_fishtank/core/repositories/user/user_repository.dart';
+import 'package:smart_fishtank/feature/auth/cubit/auth_cubit.dart';
 
 import '../../core/repositories/smart_fish_tank/models/smart_fish_tank_state.dart';
 import '../../core/repositories/user/models/my_fish_tank.dart';
 
-part 'home_state.dart';
-
 part 'home_cubit.freezed.dart';
+part 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit(
@@ -25,9 +24,12 @@ class HomeCubit extends Cubit<HomeState> {
     fetch();
   }
 
+  int num = 0;
+
   final AuthCubit _authCubit;
   final UserRepository _userRepository;
   final SmartFishTankRepository _fishTankRepository;
+  StreamSubscription? _fishTankSubs;
 
   Future<void> fetch() async {
     final fishTanks = await _userRepository.fetchMyFishTanks();
@@ -44,8 +46,19 @@ class HomeCubit extends Cubit<HomeState> {
       return;
     }
 
-    emit(state.copyWith(currentFishTank: fishTank));
+    emit(state.copyWith(currentFishTank: fishTank, fishTankState: null));
+    _fetchFishTankState();
     _subscribeFishTankState();
+  }
+
+  Future<void> _fetchFishTankState() async {
+    final current = state.currentFishTank;
+    if (current == null) {
+      return;
+    }
+
+    final fishTank = await _fishTankRepository.getFishTankState(current.uid);
+    emit(state.copyWith(fishTankState: fishTank));
   }
 
   Future<void> _subscribeFishTankState() async {
@@ -54,7 +67,12 @@ class HomeCubit extends Cubit<HomeState> {
       return;
     }
 
-    _fishTankRepository.onChangeFishTankState(current.uid).listen((e) {
+    if (_fishTankSubs != null) {
+      _fishTankSubs?.cancel();
+      _fishTankSubs = null;
+    }
+    _fishTankSubs =
+        _fishTankRepository.onChangeFishTankState(current.uid).listen((e) {
       emit(state.copyWith(fishTankState: e));
     });
 
@@ -90,7 +108,7 @@ class HomeCubit extends Cubit<HomeState> {
         type: SocketType.light,
         fromHourUtc: 9,
         fromMinUtc: 0,
-        toHourUtc: 16,
+        toHourUtc: num,
         toMinUtc: 0,
       ),
       socket2: SmartFishTankSocketSettings(
@@ -103,4 +121,11 @@ class HomeCubit extends Cubit<HomeState> {
     );
     await _fishTankRepository.updateFishTankSettings(current.uid, set);
   }
+
+  Future<void> updateSocketConfig(
+    int socketNum, {
+    required TimeOfDay timeFrom,
+    required TimeOfDay timeTo,
+    required SocketType type,
+  }) async {}
 }

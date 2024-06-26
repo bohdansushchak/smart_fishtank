@@ -1,10 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+
+import '../../../utils/time_of_day_extension.dart';
 
 part 'smart_fish_tank_settings.freezed.dart';
 part 'smart_fish_tank_settings.g.dart';
 
 @freezed
 class SmartFishTankSettings with _$SmartFishTankSettings {
+  const SmartFishTankSettings._();
+
   // ignore: invalid_annotation_target
   @JsonSerializable(explicitToJson: true)
   const factory SmartFishTankSettings({
@@ -27,6 +32,8 @@ enum SocketType {
 
 @freezed
 class SmartFishTankSocketSettings with _$SmartFishTankSocketSettings {
+  const SmartFishTankSocketSettings._();
+
   // ignore: invalid_annotation_target
   @JsonSerializable(explicitToJson: true)
   const factory SmartFishTankSocketSettings({
@@ -39,4 +46,14 @@ class SmartFishTankSocketSettings with _$SmartFishTankSocketSettings {
 
   factory SmartFishTankSocketSettings.fromJson(Map<String, dynamic> json) =>
       _$SmartFishTankSocketSettingsFromJson(json);
+
+  TimeOfDay get timeFromUtc => TimeOfDay(hour: fromHourUtc, minute: fromMinUtc);
+
+  TimeOfDay get timeToUtc => TimeOfDay(hour: toHourUtc, minute: toMinUtc);
+
+  TimeOfDay get timeFromLocal => TimeOfDayExt.fromUtc(fromHourUtc, fromMinUtc);
+
+  TimeOfDay get timeToLocal => TimeOfDayExt.fromUtc(toHourUtc, toMinUtc);
+
+  Duration get duration => timeFromUtc.difference(timeToUtc);
 }

@@ -208,9 +208,10 @@ class __$$SmartFishTankSettingsImplCopyWithImpl<$Res>
 /// @nodoc
 
 @JsonSerializable(explicitToJson: true)
-class _$SmartFishTankSettingsImpl implements _SmartFishTankSettings {
+class _$SmartFishTankSettingsImpl extends _SmartFishTankSettings {
   const _$SmartFishTankSettingsImpl(
-      {this.socket1, this.socket2, this.socket3, this.socket4});
+      {this.socket1, this.socket2, this.socket3, this.socket4})
+      : super._();
 
   factory _$SmartFishTankSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$SmartFishTankSettingsImplFromJson(json);
@@ -260,13 +261,14 @@ class _$SmartFishTankSettingsImpl implements _SmartFishTankSettings {
   }
 }
 
-abstract class _SmartFishTankSettings implements SmartFishTankSettings {
+abstract class _SmartFishTankSettings extends SmartFishTankSettings {
   const factory _SmartFishTankSettings(
           {final SmartFishTankSocketSettings? socket1,
           final SmartFishTankSocketSettings? socket2,
           final SmartFishTankSocketSettings? socket3,
           final SmartFishTankSocketSettings? socket4}) =
       _$SmartFishTankSettingsImpl;
+  const _SmartFishTankSettings._() : super._();
 
   factory _SmartFishTankSettings.fromJson(Map<String, dynamic> json) =
       _$SmartFishTankSettingsImpl.fromJson;
@@ -429,14 +431,14 @@ class __$$SmartFishTankSocketSettingsImplCopyWithImpl<$Res>
 /// @nodoc
 
 @JsonSerializable(explicitToJson: true)
-class _$SmartFishTankSocketSettingsImpl
-    implements _SmartFishTankSocketSettings {
+class _$SmartFishTankSocketSettingsImpl extends _SmartFishTankSocketSettings {
   const _$SmartFishTankSocketSettingsImpl(
       {required this.type,
       required this.fromHourUtc,
       required this.fromMinUtc,
       required this.toHourUtc,
-      required this.toMinUtc});
+      required this.toMinUtc})
+      : super._();
 
   factory _$SmartFishTankSocketSettingsImpl.fromJson(
           Map<String, dynamic> json) =>
@@ -495,13 +497,14 @@ class _$SmartFishTankSocketSettingsImpl
 }
 
 abstract class _SmartFishTankSocketSettings
-    implements SmartFishTankSocketSettings {
+    extends SmartFishTankSocketSettings {
   const factory _SmartFishTankSocketSettings(
       {required final SocketType type,
       required final int fromHourUtc,
       required final int fromMinUtc,
       required final int toHourUtc,
       required final int toMinUtc}) = _$SmartFishTankSocketSettingsImpl;
+  const _SmartFishTankSocketSettings._() : super._();
 
   factory _SmartFishTankSocketSettings.fromJson(Map<String, dynamic> json) =
       _$SmartFishTankSocketSettingsImpl.fromJson;

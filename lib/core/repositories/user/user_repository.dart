@@ -21,8 +21,11 @@ class UserRepository {
       return null;
     }
 
-    print(res.value.runtimeType);
     // return Profile.fromJson(res.value as Map<String, dynamic>);
+  }
+
+  Future<void> setNum(int num) {
+    return _fbDatabase.ref('test/num').set(num);
   }
 
   Future<List<MyFishTank>?> fetchMyFishTanks() async {
